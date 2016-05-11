@@ -14,7 +14,7 @@ LOCAL_TZ = tz.tzlocal()
 
 class FormattedIncident(object):
     def pretty_output(self):
-        return 'Time: {}\nService: {}\nDescription: {}\nURL: {}\nNotes:\n{}\n'.format(
+        return u'Time: {}\nService: {}\nDescription: {}\nURL: {}\nNotes:\n{}\n'.format(
             self.created_on.strftime('%A, %B %-d - %-I:%M %p'),
             self.service,
             self.description,
@@ -53,7 +53,7 @@ def print_all_incidents():
             notes = list(incident.notes.list())
             formatted_notes = []
             for note in notes:
-                formatted_notes.append('{}: {}'.format(note.user.email, note.content))
+                formatted_notes.append(u'{}: {}'.format(note.user.email, note.content))
             formatted_incident.notes = formatted_notes
             all_incidents.append(formatted_incident)
 
