@@ -34,16 +34,24 @@ Notes:
 
 ## Setup
 Update your settings.
+
 ```bash
 cp settings_example.py settings.py
 
 # Update settings.py for your PagerDuty escalation policy.
 #
+# Find the 6 character ESCALATION_POLICY id visiting
+#   https://yoursubdomain.pagerduty.com/escalation_policies
+# and searching for the escalation policy you want to audit.
+# The code will be at the end of the URL.
+#
 # PAGERDUTY_SUBDOMAIN = 'yoursubdomain'
 # PAGERDUTY_API_TOKEN = 'yourapitoken'
-# ESCALATION_POLICY = 'PYODVQB'  # Get from https://subdomain.pagerduty.com/schedules#PYODVQB
+# ESCALATION_POLICY = 'PYODVQB'  # Get from https://yoursubdomain.pagerduty.com/escalation_policies#PYODVQB
 # TIME_WINDOW_SECONDS = 7 * 24 * 60 * 60  # 1 week
 ```
+
+Find the 6 character code by going to https://yoursubdomain.pagerduty.com/escalation_policies and searching for the escalation policy whose alerts you want to audit. The code will be at the end of the URL. For example https://yoursubdomain.pagerduty.com/escalation_policies#PYODVQB should use the code `'PYODVQB'`.
 
 Set up your environment.
 ```bash
