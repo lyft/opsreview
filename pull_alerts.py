@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import division, print_function, unicode_literals
 import argparse
 from datetime import datetime, timedelta
 from dateutil import tz
@@ -68,8 +70,8 @@ def print_all_incidents(group_by_description=False):
     for incident in all_incidents:
         if group_by_description and incident.description != prev_description:
             prev_description = incident.description
-            print "########### {} ##########\n".format(incident.description)
-        print incident.pretty_output()
+            print("########### {} ##########\n".format(incident.description))
+        print(incident.pretty_output())
 
 
 if __name__ == '__main__':
