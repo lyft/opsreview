@@ -57,7 +57,9 @@ def print_all_incidents():
             formatted_incident.notes = formatted_notes
             all_incidents.append(formatted_incident)
 
-    all_incidents = sorted(all_incidents, key=(lambda incident: incident.created_on))
+    all_incidents = sorted(all_incidents,
+                           key=(lambda incident: [incident.description,
+                                                  incident.created_on]))
     for incident in all_incidents:
         print incident.pretty_output()
 
