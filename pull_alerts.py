@@ -38,7 +38,6 @@ def print_all_incidents(group_by_description=False):
 
     for service in services:
         service_id = service.id
-        service_name = service.name
         incidents = recent_incidents_for_service(service_id, settings.TIME_WINDOW_SECONDS)
 
         for incident in incidents:
