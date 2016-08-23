@@ -1,6 +1,8 @@
 # opsreview
 Compile a report of recent PagerDuty alerts for a single escalation policy.
 
+[![Build Status](https://travis-ci.org/lyft/opsreview.svg?branch=master)](https://travis-ci.org/lyft/opsreview)
+
 ## Purpose
 To keep the on-call duty tolerable, it's important to regularly review recent alerts and determine what actions need to be taken. That might be fixing the originating issue, or modifying your alerting behaviors.
 
