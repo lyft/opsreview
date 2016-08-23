@@ -1,3 +1,4 @@
+import argparse
 from datetime import datetime, timedelta
 from dateutil import tz
 import dateutil.parser
@@ -29,7 +30,7 @@ def recent_incidents_for_service(service_id, time_window_seconds):
     return recent_incidents
 
 
-def print_all_incidents():
+def print_all_incidents(group_by_description=False):
     escalation_policy = pagerduty_service.escalation_policies.show(settings.ESCALATION_POLICY)
     services = escalation_policy.services
 
@@ -57,10 +58,26 @@ def print_all_incidents():
             formatted_incident.notes = formatted_notes
             all_incidents.append(formatted_incident)
 
-    all_incidents = sorted(all_incidents, key=(lambda incident: incident.created_on))
+    if group_by_description:
+        def sort_key(incident):
+            return [incident.description, incident.created_on]
+    else:
+        def sort_key(incident):
+            return incident.created_on
+    all_incidents = sorted(all_incidents, key=sort_key)
+    prev_description = None
     for incident in all_incidents:
+        if group_by_description and incident.description != prev_description:
+            prev_description = incident.description
+            print "########### {} ##########\n".format(incident.description)
         print incident.pretty_output()
 
 
 if __name__ == '__main__':
-    print_all_incidents()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--group-by-description",
+                        action="store_true",
+                        default=False,
+                        help="Group PD incidents by description")
+    args = parser.parse_args()
+    print_all_incidents(group_by_description=args.group_by_description)
