@@ -58,7 +58,16 @@ def print_all_incidents(group_by_description=False):
                 formatted_notes.append(u'{}: {}'.format(note.user.email, note.content))
             formatted_incident.notes = formatted_notes
             all_incidents.append(formatted_incident)
+    all_incidents = sort_incidents(all_incidents, group_by_description)
+    prev_description = None
+    for incident in all_incidents:
+        if group_by_description and incident.description != prev_description:
+            prev_description = incident.description
+            print("########### {} ##########\n".format(incident.description))
+        print(incident.pretty_output())
 
+
+def sort_incidents(all_incidents, group_by_description):
     if group_by_description:
         incidents_by_description = {}
         for incident in all_incidents:
@@ -73,12 +82,7 @@ def print_all_incidents(group_by_description=False):
             all_incidents.extend(incidents_by_description[description])
     else:
         all_incidents = sorted(all_incidents, key=lambda i: i.created_on)
-    prev_description = None
-    for incident in all_incidents:
-        if group_by_description and incident.description != prev_description:
-            prev_description = incident.description
-            print("########### {} ##########\n".format(incident.description))
-        print(incident.pretty_output())
+    return all_incidents
 
 
 if __name__ == '__main__':
