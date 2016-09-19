@@ -60,12 +60,19 @@ def print_all_incidents(group_by_description=False):
             all_incidents.append(formatted_incident)
 
     if group_by_description:
-        def sort_key(incident):
-            return [incident.description, incident.created_on]
+        incidents_by_description = {}
+        for incident in all_incidents:
+            try:
+                incidents_by_description[incident.description].append(incident)
+            except KeyError:
+                incidents_by_description[incident.description] = [incident]
+        all_incidents = []
+        for description in sorted(incidents_by_description,
+                                  key=lambda description: len(incidents_by_description[description]),
+                                  reverse=True):
+            all_incidents.extend(incidents_by_description[description])
     else:
-        def sort_key(incident):
-            return incident.created_on
-    all_incidents = sorted(all_incidents, key=sort_key)
+        all_incidents = sorted(all_incidents, key=lambda i: i.created_on)
     prev_description = None
     for incident in all_incidents:
         if group_by_description and incident.description != prev_description:
