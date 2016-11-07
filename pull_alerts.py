@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division, print_function, unicode_literals
 import argparse
+import logging
 from datetime import datetime, timedelta
 from dateutil import tz
 import dateutil.parser
@@ -9,6 +10,8 @@ import pygerduty
 
 import settings
 
+
+logger = logging.getLogger(__name__)
 
 pagerduty_service = pygerduty.PagerDuty(
         settings.PAGERDUTY_SUBDOMAIN, settings.PAGERDUTY_API_TOKEN)
@@ -33,8 +36,9 @@ def recent_incidents_for_service(service_id, time_window_seconds):
 
 
 def print_all_incidents(group_by_description=False):
-    escalation_policy = pagerduty_service.escalation_policies.show(settings.ESCALATION_POLICY)
-    services = escalation_policy.services
+    services = []
+    for escalation_policy in _get_escalation_policies():
+        services.extend(list(pagerduty_service.escalation_policies.show(escalation_policy).services))
 
     all_incidents = []
 
@@ -50,6 +54,10 @@ def print_all_incidents(group_by_description=False):
                 formatted_incident.description = incident.trigger_summary_data.subject
             elif hasattr(incident.trigger_summary_data, 'description'):
                 formatted_incident.description = incident.trigger_summary_data.description
+            elif hasattr(incident, 'incident_key'):
+                formatted_incident.description = incident.incident_key
+            else:
+                logger.warning('action=get_description status=not_found incident={}'.format(incident))
             formatted_incident.created_on = dateutil.parser.parse(incident.created_on).astimezone(LOCAL_TZ)
 
             notes = list(incident.notes.list())
@@ -85,7 +93,17 @@ def sort_incidents(all_incidents, group_by_description):
     return all_incidents
 
 
+def _get_escalation_policies():
+    try:
+        escalation_policies = settings.ESCALATION_POLICIES
+    except AttributeError:
+        logger.warning('setting=ESCALATION_POLICY status=deprecated use=ESCALATION_POLICIES')
+        escalation_policies = [settings.ESCALATION_POLICY]
+    return escalation_policies
+
+
 if __name__ == '__main__':
+    logging.basicConfig()
     parser = argparse.ArgumentParser()
     parser.add_argument("--group-by-description",
                         action="store_true",
