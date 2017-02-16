@@ -28,6 +28,30 @@ class FormattedIncident(object):
             self.notes,
         )
 
+    @classmethod
+    def tsv_headers(self):
+        return ['create_date',
+                'create_hour_pst',
+                'incident_number',
+                'service',
+                'urgency',
+                'url',
+                'description',
+                'minutes_open',
+                'num_snoozes']
+
+    def to_tsv_row(self):
+        return '\t'.join([
+            self.created_on.strftime('%Y-%m-%d'),
+            self.created_on.strftime('%H'),
+            str(self.incident_number),
+            self.service,
+            self.urgency,
+            self.url,
+            self.description,
+            str(self.minutes_open),
+            str(self.num_snoozes)])
+
 
 def recent_incidents_for_service(service_id, time_window_seconds):
     since_time = datetime.now() - timedelta(seconds=time_window_seconds)
@@ -36,6 +60,21 @@ def recent_incidents_for_service(service_id, time_window_seconds):
 
 
 def print_all_incidents(group_by_description=False):
+    all_incidents = fetch_all_incidents(group_by_description)
+    prev_description = None
+    for incident in all_incidents:
+        if group_by_description and incident.description != prev_description:
+            prev_description = incident.description
+            print("########### {} ##########\n".format(incident.description))
+        print(incident.pretty_output())
+
+def export_all_incidents_to_tsv(group_by_description=False):
+    all_incidents = fetch_all_incidents(group_by_description)
+    print('\t'.join(FormattedIncident.tsv_headers()))
+    for incident in all_incidents:
+        print(incident.to_tsv_row())
+
+def fetch_all_incidents(group_by_description=False):
     services = []
     for escalation_policy in _get_escalation_policies():
         services.extend(list(pagerduty_service.escalation_policies.show(escalation_policy).services))
@@ -58,7 +97,17 @@ def print_all_incidents(group_by_description=False):
                 formatted_incident.description = incident.incident_key
             else:
                 logger.warning('action=get_description status=not_found incident={}'.format(incident))
-            formatted_incident.created_on = dateutil.parser.parse(incident.created_on).astimezone(LOCAL_TZ)
+
+            created_on = dateutil.parser.parse(incident.created_on).astimezone(LOCAL_TZ)
+            formatted_incident.created_on = created_on
+
+            if incident.status == 'resolved':
+                resolved_at = dateutil.parser.parse(incident.last_status_change_on).astimezone(LOCAL_TZ)
+                formatted_incident.minutes_open = int(round((resolved_at - created_on).seconds / 60.0))
+
+            formatted_incident.num_snoozes = len([x for x in incident.log_entries.list() if x.type == 'snooze'])
+            formatted_incident.urgency = incident.urgency
+            formatted_incident.incident_number = incident.incident_number
 
             notes = list(incident.notes.list())
             formatted_notes = []
@@ -66,14 +115,7 @@ def print_all_incidents(group_by_description=False):
                 formatted_notes.append(u'{}: {}'.format(note.user.email, note.content))
             formatted_incident.notes = formatted_notes
             all_incidents.append(formatted_incident)
-    all_incidents = sort_incidents(all_incidents, group_by_description)
-    prev_description = None
-    for incident in all_incidents:
-        if group_by_description and incident.description != prev_description:
-            prev_description = incident.description
-            print("########### {} ##########\n".format(incident.description))
-        print(incident.pretty_output())
-
+    return sort_incidents(all_incidents, group_by_description)
 
 def sort_incidents(all_incidents, group_by_description):
     if group_by_description:
@@ -110,4 +152,6 @@ if __name__ == '__main__':
                         default=False,
                         help="Group PD incidents by description")
     args = parser.parse_args()
-    print_all_incidents(group_by_description=args.group_by_description)
+    export_all_incidents_to_tsv()
+    # print_all_incidents(group_by_description=args.group_by_description)
+
