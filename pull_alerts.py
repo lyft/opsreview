@@ -104,6 +104,8 @@ def fetch_all_incidents(group_by_description=False):
             if incident.status == 'resolved':
                 resolved_at = dateutil.parser.parse(incident.last_status_change_on).astimezone(LOCAL_TZ)
                 formatted_incident.minutes_open = int(round((resolved_at - created_on).seconds / 60.0))
+            else:
+                formatted_incident.minutes_open = None
 
             formatted_incident.num_snoozes = len([x for x in incident.log_entries.list() if x.type == 'snooze'])
             formatted_incident.urgency = incident.urgency
