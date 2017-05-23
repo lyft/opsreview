@@ -52,10 +52,16 @@ class FormattedIncident(object):
             str(self.minutes_open),
             str(self.num_snoozes)])
 
+def count_incidents_for_service(service_id):
+    since_time = datetime(2017, 1, 2)
+    until_time = since_time + timedelta(days=90)
+    return pagerduty_service.incidents.count(service=service_id, since=since_time, until=until_time)
+
 
 def recent_incidents_for_service(service_id, time_window_seconds):
     since_time = datetime.now() - timedelta(seconds=time_window_seconds)
-    recent_incidents = list(pagerduty_service.incidents.list(service=service_id, since=since_time))
+    until_time = since_time + timedelta(days=21)
+    recent_incidents = list(pagerduty_service.incidents.list(service=service_id, since=since_time, until=until_time))
     return recent_incidents
 
 
@@ -73,6 +79,19 @@ def export_all_incidents_to_tsv(group_by_description=False):
     print('\t'.join(FormattedIncident.tsv_headers()))
     for incident in all_incidents:
         print(incident.to_tsv_row())
+
+def count_all_incidents():
+    services = []
+    for escalation_policy in _get_escalation_policies():
+        services.extend(list(pagerduty_service.escalation_policies.show(escalation_policy).services))
+
+    total = 0
+    for service in services:
+        num = count_incidents_for_service(service.id)
+        print('{}: {}'.format(service, num))
+        total += num
+
+    print(total)
 
 def fetch_all_incidents(group_by_description=False):
     services = []
@@ -154,6 +173,7 @@ if __name__ == '__main__':
                         default=False,
                         help="Group PD incidents by description")
     args = parser.parse_args()
+    #count_all_incidents()
     export_all_incidents_to_tsv()
     # print_all_incidents(group_by_description=args.group_by_description)
 
