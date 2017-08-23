@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division, print_function, unicode_literals
 import argparse
 import logging
+from collections import defaultdict
 from datetime import datetime, timedelta
 from dateutil import tz
 import dateutil.parser
@@ -105,12 +106,10 @@ def print_stats(all_incidents, include_stats):
 
 def sort_incidents(all_incidents, group_by_description):
     if group_by_description:
-        incidents_by_description = {}
+        incidents_by_description = defaultdict(list)
         for incident in all_incidents:
-            try:
-                incidents_by_description[incident.description].append(incident)
-            except KeyError:
-                incidents_by_description[incident.description] = [incident]
+            incidents_by_description[incident.description].append(incident)
+
         all_incidents = []
         for description in sorted(incidents_by_description,
                                   key=lambda description: len(incidents_by_description[description]),
