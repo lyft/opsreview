@@ -1,5 +1,5 @@
 # opsreview
-Compile a report of recent PagerDuty alerts for a single escalation policy.
+Compile a report of recent PagerDuty alerts for a given list of escalation policies.
 
 [![Build Status](https://travis-ci.org/lyft/opsreview.svg?branch=master)](https://travis-ci.org/lyft/opsreview)
 
