@@ -29,8 +29,8 @@ class FormattedIncident(object):
         )
 
 
-def recent_incidents_for_service(service_id, time_window_seconds):
-    since_time = datetime.now() - timedelta(seconds=time_window_seconds)
+def recent_incidents_for_service(service_id, time_window):
+    since_time = datetime.now() - time_window
     recent_incidents = list(pagerduty_service.incidents.list(service=service_id, since=since_time))
     return recent_incidents
 
@@ -44,7 +44,7 @@ def print_all_incidents(group_by_description=False):
 
     for service in services:
         service_id = service.id
-        incidents = recent_incidents_for_service(service_id, settings.TIME_WINDOW_SECONDS)
+        incidents = recent_incidents_for_service(service_id, _get_time_window())
 
         for incident in incidents:
             formatted_incident = FormattedIncident()
@@ -100,6 +100,15 @@ def _get_escalation_policies():
         logger.warning('setting=ESCALATION_POLICY status=deprecated use=ESCALATION_POLICIES')
         escalation_policies = [settings.ESCALATION_POLICY]
     return escalation_policies
+
+def _get_time_window():
+    try:
+        time_window = settings.TIME_WINDOW
+    except AttributeError:
+        logger.warning('setting=TIME_WINDOW_SECONDS status=deprecated use=TIME_WINDOW')
+        time_window = timedelta(seconds=settings.TIME_WINDOW_SECONDS)
+    return time_window
+
 
 
 if __name__ == '__main__':
