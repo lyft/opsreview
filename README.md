@@ -35,7 +35,7 @@ Notes:
 ```
 
 ## Setup
-Update your settings.
+Update your settings. To get an API token, go to the "User Settings" tab on your PagerDuty profile and click "Create API User Token". Make sure to use a v1 token, not v2.
 ```bash
 cp settings_example.py settings.py
 
