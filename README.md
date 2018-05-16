@@ -35,7 +35,7 @@ Notes:
 ```
 
 ## Setup
-Update your settings. To get an API token, go to the "User Settings" tab on your PagerDuty profile and click "Create API User Token". Make sure to use a v1 token, not v2.
+Update your settings. To get an API token, go to the "User Settings" tab on your PagerDuty profile and click "Create API User Token". Make sure to use a v2 token.
 ```bash
 cp settings_example.py settings.py
 
@@ -43,7 +43,6 @@ cp settings_example.py settings.py
 #
 # from datetime import timedelta
 #
-# PAGERDUTY_SUBDOMAIN = 'yoursubdomain'
 # PAGERDUTY_API_TOKEN = 'yourapitoken'
 # ESCALATION_POLICIES = ['PYODVQB']  # Get from https://yoursubdomain.pagerduty.com/escalation_policies#PYODVQB
 # TIME_WINDOW = timedelta(weeks=1)
