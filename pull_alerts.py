@@ -99,6 +99,7 @@ def _get_escalation_policies():
         escalation_policies = [settings.ESCALATION_POLICY]
     return escalation_policies
 
+
 def _get_time_window():
     try:
         time_window = settings.TIME_WINDOW
@@ -106,7 +107,6 @@ def _get_time_window():
         logger.warning('setting=TIME_WINDOW_SECONDS status=deprecated use=TIME_WINDOW')
         time_window = timedelta(seconds=settings.TIME_WINDOW_SECONDS)
     return time_window
-
 
 
 if __name__ == '__main__':
