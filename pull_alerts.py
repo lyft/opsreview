@@ -35,7 +35,7 @@ def recent_incidents_for_services(services, time_window):
     return recent_incidents
 
 
-def print_all_incidents(group_by_description=False):
+def print_all_incidents(group_by_description=False, include_stats=False, include_incidents_as_blockquote=False):
     services = []
     for escalation_policy in _get_escalation_policies():
         services.extend(list(pagerduty_service.escalation_policies.show(escalation_policy).services))
@@ -65,12 +65,42 @@ def print_all_incidents(group_by_description=False):
         all_incidents.append(formatted_incident)
 
     all_incidents = sort_incidents(all_incidents, group_by_description)
+    print_stats(all_incidents, include_stats)
     prev_description = None
+    if include_incidents_as_blockquote:
+        print("""# Raw incident log
+```
+""")
     for incident in all_incidents:
         if group_by_description and incident.description != prev_description:
             prev_description = incident.description
             print("########### {} ##########\n".format(incident.description))
         print(incident.pretty_output())
+    if include_incidents_as_blockquote:
+        print("```")
+
+
+def print_stats(all_incidents, include_stats):
+    if not include_stats:
+        return
+    actionable = 0
+    non_actionable = 0
+    not_tagged = 0
+    for i in all_incidents:
+        if is_actionable(i):
+            actionable += 1
+        elif is_non_actionable(i):
+            non_actionable += 1
+        else:
+            not_tagged += 1
+    print("""# Statistics
+| Incidents            | Number |
+| -------------------- | ------ |
+| Total                | {} |
+| Actionable (#a)      | {} |
+| Non Actionable (#na) | {} |
+| Not Tagged           | {} |
+""".format(len(all_incidents), actionable, non_actionable, not_tagged))
 
 
 def sort_incidents(all_incidents, group_by_description):
@@ -109,6 +139,14 @@ def _get_time_window():
     return time_window
 
 
+def is_actionable(incident):
+    return bool([note for note in incident.notes if '#a' in note])
+
+
+def is_non_actionable(incident):
+    return bool([note for note in incident.notes if '#na' in note])
+
+
 if __name__ == '__main__':
     logging.basicConfig()
     parser = argparse.ArgumentParser()
@@ -116,5 +154,17 @@ if __name__ == '__main__':
                         action="store_true",
                         default=False,
                         help="Group PD incidents by description")
+    parser.add_argument("--include-stats",
+                        action="store_true",
+                        default=False,
+                        help="Include incidents stats")
+    parser.add_argument("--include-incidents-as-blockquote",
+                        action="store_true",
+                        default=False,
+                        help="Include raw incident log as markdown blockquote")
     args = parser.parse_args()
-    print_all_incidents(group_by_description=args.group_by_description)
+    print_all_incidents(
+        group_by_description=args.group_by_description,
+        include_stats=args.include_stats,
+        include_incidents_as_blockquote=args.include_incidents_as_blockquote
+    )
