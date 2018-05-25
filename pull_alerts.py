@@ -87,9 +87,9 @@ def print_stats(all_incidents, include_stats):
     non_actionable = 0
     not_tagged = 0
     for i in all_incidents:
-        if actionable(i):
+        if is_actionable(i):
             actionable += 1
-        elif non_actionable(i):
+        elif is_non_actionable(i):
             non_actionable += 1
         else:
             not_tagged += 1
@@ -139,11 +139,11 @@ def _get_time_window():
     return time_window
 
 
-def actionable(incident):
+def is_actionable(incident):
     return bool([note for note in incident.notes if '#a' in note])
 
 
-def non_actionable(incident):
+def is_non_actionable(incident):
     return bool([note for note in incident.notes if '#na' in note])
 
 
