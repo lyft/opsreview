@@ -83,6 +83,16 @@ def print_all_incidents(group_by_description=False, include_stats=False, include
 def print_stats(all_incidents, include_stats):
     if not include_stats:
         return
+    actionable = 0
+    non_actionable = 0
+    not_tagged = 0
+    for i in all_incidents:
+        if actionable(i):
+            actionable += 1
+        elif non_actionable(i):
+            non_actionable += 1
+        else:
+            not_tagged += 1
     print("""# Statistics
 | Incidents            | Number |
 | -------------------- | ------ |
@@ -90,10 +100,7 @@ def print_stats(all_incidents, include_stats):
 | Actionable (#a)      | {} |
 | Non Actionable (#na) | {} |
 | Not Tagged           | {} |
-""".format(len(all_incidents),
-           len([i for i in all_incidents if actionable(i)]),
-           len([i for i in all_incidents if non_actionable(i)]),
-           len([i for i in all_incidents if not_tagged(i)])))
+""".format(len(all_incidents), actionable, non_actionable, not_tagged))
 
 
 def sort_incidents(all_incidents, group_by_description):
@@ -133,15 +140,11 @@ def _get_time_window():
 
 
 def actionable(incident):
-    return '#a' in incident.notes
+    return bool([note for note in incident.notes if '#a' in note])
 
 
 def non_actionable(incident):
-    return '#na' in incident.notes
-
-
-def not_tagged(incident):
-    return not actionable(incident) and not non_actionable(incident)
+    return bool([note for note in incident.notes if '#na' in note])
 
 
 if __name__ == '__main__':
