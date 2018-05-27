@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import division, print_function, unicode_literals
 import argparse
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from dateutil import tz
 import dateutil.parser
 
@@ -37,11 +37,11 @@ def recent_incidents_for_services(services, time_window):
 
 def print_all_incidents(group_by_description=False, include_stats=False, include_incidents_as_blockquote=False):
     services = []
-    for escalation_policy in _get_escalation_policies():
+    for escalation_policy in settings.ESCALATION_POLICIES:
         services.extend(list(pagerduty_service.escalation_policies.show(escalation_policy).services))
 
     all_incidents = []
-    incidents = recent_incidents_for_services(services, _get_time_window())
+    incidents = recent_incidents_for_services(services, settings.TIME_WINDOW)
 
     for incident in incidents:
         formatted_incident = FormattedIncident()
@@ -119,24 +119,6 @@ def sort_incidents(all_incidents, group_by_description):
     else:
         all_incidents = sorted(all_incidents, key=lambda i: i.created_on)
     return all_incidents
-
-
-def _get_escalation_policies():
-    try:
-        escalation_policies = settings.ESCALATION_POLICIES
-    except AttributeError:
-        logger.warning('setting=ESCALATION_POLICY status=deprecated use=ESCALATION_POLICIES')
-        escalation_policies = [settings.ESCALATION_POLICY]
-    return escalation_policies
-
-
-def _get_time_window():
-    try:
-        time_window = settings.TIME_WINDOW
-    except AttributeError:
-        logger.warning('setting=TIME_WINDOW_SECONDS status=deprecated use=TIME_WINDOW')
-        time_window = timedelta(seconds=settings.TIME_WINDOW_SECONDS)
-    return time_window
 
 
 def is_actionable(incident):
