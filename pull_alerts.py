@@ -96,10 +96,10 @@ def print_stats(all_incidents, include_stats):
     print("""# Statistics
 | Incidents            | Number |
 | -------------------- | ------ |
-| Total                | {} |
-| Actionable (#a)      | {} |
-| Non Actionable (#na) | {} |
-| Not Tagged           | {} |
+| Total                | {:6} |
+| Actionable (#a)      | {:6} |
+| Non Actionable (#na) | {:6} |
+| Not Tagged           | {:6} |
 """.format(len(all_incidents), actionable, non_actionable, not_tagged))
 
 
