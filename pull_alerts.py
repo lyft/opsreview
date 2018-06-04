@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division, print_function, unicode_literals
 import argparse
 import logging
+from collections import defaultdict
 from datetime import datetime
 from dateutil import tz
 import dateutil.parser
@@ -96,21 +97,19 @@ def print_stats(all_incidents, include_stats):
     print("""# Statistics
 | Incidents            | Number |
 | -------------------- | ------ |
-| Total                | {} |
-| Actionable (#a)      | {} |
-| Non Actionable (#na) | {} |
-| Not Tagged           | {} |
+| Total                | {:6} |
+| Actionable (#a)      | {:6} |
+| Non Actionable (#na) | {:6} |
+| Not Tagged           | {:6} |
 """.format(len(all_incidents), actionable, non_actionable, not_tagged))
 
 
 def sort_incidents(all_incidents, group_by_description):
     if group_by_description:
-        incidents_by_description = {}
+        incidents_by_description = defaultdict(list)
         for incident in all_incidents:
-            try:
-                incidents_by_description[incident.description].append(incident)
-            except KeyError:
-                incidents_by_description[incident.description] = [incident]
+            incidents_by_description[incident.description].append(incident)
+
         all_incidents = []
         for description in sorted(incidents_by_description,
                                   key=lambda description: len(incidents_by_description[description]),
@@ -122,11 +121,11 @@ def sort_incidents(all_incidents, group_by_description):
 
 
 def is_actionable(incident):
-    return bool([note for note in incident.notes if '#a' in note])
+    return any('#a' in note for note in incident.notes)
 
 
 def is_non_actionable(incident):
-    return bool([note for note in incident.notes if '#na' in note])
+    return any('#na' in note for note in incident.notes)
 
 
 if __name__ == '__main__':
