@@ -140,11 +140,11 @@ def _get_time_window():
 
 
 def is_actionable(incident):
-    return bool([note for note in incident.notes if '#a' in note])
+    return any('#a' in note for note in incident.notes)
 
 
 def is_non_actionable(incident):
-    return bool([note for note in incident.notes if '#na' in note])
+    return any('#na' in note for note in incident.notes)
 
 
 if __name__ == '__main__':
