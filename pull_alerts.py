@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 from __future__ import division, print_function, unicode_literals
+
 import argparse
 import logging
-from collections import defaultdict
-from datetime import datetime
+from collections import OrderedDict, defaultdict
+from datetime import datetime, timedelta
 from dateutil import tz
 import dateutil.parser
 
@@ -30,21 +31,61 @@ class FormattedIncident(object):
 
 
 def recent_incidents_for_services(services, time_window):
-    since_time = datetime.now() - time_window
     service_ids = [service.id for service in services]
-    recent_incidents = list(pagerduty_service.incidents.list(service_ids=service_ids, since=since_time, limit=100))
+    recent_incidents = list(pagerduty_service.incidents.list(
+        service_ids=service_ids,
+        since=datetime.now() - time_window
+    ))
     return recent_incidents
 
 
-def print_all_incidents(group_by_description=False, include_stats=False, include_incidents_as_blockquote=False):
+def print_all_incidents(
+    silent,
+    time_window_days,
+    group_by_description=False,
+    group_by_service=False,
+    include_stats=False,
+    include_incidents_as_blockquote=False,
+):
     services = []
     for escalation_policy in settings.ESCALATION_POLICIES:
         services.extend(list(pagerduty_service.escalation_policies.show(escalation_policy).services))
 
-    all_incidents = []
-    incidents = recent_incidents_for_services(services, settings.TIME_WINDOW)
+    recent_incidents = recent_incidents_for_services(services, timedelta(days=time_window_days))
+    formatted_incidents = get_formatted_incidents(recent_incidents)
 
-    for incident in incidents:
+    all_incidents, sorted_description_to_incident_list, sorted_service_to_incident_list = sort_incidents(
+        formatted_incidents,
+        group_by_description,
+        group_by_service
+    )
+    print_stats(all_incidents, include_stats)
+    if include_incidents_as_blockquote:
+        print("""# Raw incident log
+```
+""")
+    if group_by_service:
+        sorted_group_to_incident_list = sorted_service_to_incident_list
+    elif group_by_description:
+        sorted_group_to_incident_list = sorted_description_to_incident_list
+    if group_by_service or group_by_description:
+        for group, incident_list in sorted_group_to_incident_list.iteritems():
+            print("########### {}: {} ##########\n".format(len(incident_list), group))
+            if not silent:
+                for incident in incident_list:
+                    print(incident.pretty_output())
+    else:
+        for incident in all_incidents:
+            print(incident.pretty_output())
+
+    print('Total Pages: {}'.format(len(all_incidents)))
+    if include_incidents_as_blockquote:
+        print("```")
+
+
+def get_formatted_incidents(recent_incidents):
+    formatted_incidents = []
+    for incident in recent_incidents:
         formatted_incident = FormattedIncident()
         formatted_incident.service = incident.service.summary
         formatted_incident.url = incident.html_url
@@ -63,22 +104,9 @@ def print_all_incidents(group_by_description=False, include_stats=False, include
         for note in notes:
             formatted_notes.append(u'{}: {}'.format(note.user.summary, note.content))
         formatted_incident.notes = formatted_notes
-        all_incidents.append(formatted_incident)
+        formatted_incidents.append(formatted_incident)
 
-    all_incidents = sort_incidents(all_incidents, group_by_description)
-    print_stats(all_incidents, include_stats)
-    prev_description = None
-    if include_incidents_as_blockquote:
-        print("""# Raw incident log
-```
-""")
-    for incident in all_incidents:
-        if group_by_description and incident.description != prev_description:
-            prev_description = incident.description
-            print("########### {} ##########\n".format(incident.description))
-        print(incident.pretty_output())
-    if include_incidents_as_blockquote:
-        print("```")
+    return formatted_incidents
 
 
 def print_stats(all_incidents, include_stats):
@@ -104,20 +132,32 @@ def print_stats(all_incidents, include_stats):
 """.format(len(all_incidents), actionable, non_actionable, not_tagged))
 
 
-def sort_incidents(all_incidents, group_by_description):
-    if group_by_description:
-        incidents_by_description = defaultdict(list)
-        for incident in all_incidents:
-            incidents_by_description[incident.description].append(incident)
+def sort_incidents(all_incidents, group_by_description, group_by_service):
+    description_to_incident_list = defaultdict(list)
+    service_to_incident_list = defaultdict(list)
+    for incident in all_incidents:
+        description_to_incident_list[incident.description].append(incident)
+    for incident in all_incidents:
+        service_to_incident_list[incident.service].append(incident)
+    # Sort by desc count
+    sorted_description_to_incident_list = OrderedDict(sorted(
+        description_to_incident_list.items(),
+        key=lambda x: len(x[1]),
+        reverse=True
+    ))
+    sorted_service_to_incident_list = OrderedDict(sorted(
+        service_to_incident_list.items(),
+        key=lambda x: len(x[1]),
+        reverse=True
+    ))
 
+    if group_by_description:
         all_incidents = []
-        for description in sorted(incidents_by_description,
-                                  key=lambda description: len(incidents_by_description[description]),
-                                  reverse=True):
-            all_incidents.extend(incidents_by_description[description])
+        for incident_list in sorted_description_to_incident_list.itervalues():
+            all_incidents += incident_list
     else:
         all_incidents = sorted(all_incidents, key=lambda i: i.created_on)
-    return all_incidents
+    return all_incidents, sorted_description_to_incident_list, sorted_service_to_incident_list
 
 
 def is_actionable(incident):
@@ -131,10 +171,18 @@ def is_non_actionable(incident):
 if __name__ == '__main__':
     logging.basicConfig()
     parser = argparse.ArgumentParser()
+    parser.add_argument("--silent",
+                        action="store_true",
+                        default=False,
+                        help="Do not print each description")
     parser.add_argument("--group-by-description",
                         action="store_true",
                         default=False,
                         help="Group PD incidents by description")
+    parser.add_argument("--group-by-service",
+                        action="store_true",
+                        default=False,
+                        help="Group PD incidents by service")
     parser.add_argument("--include-stats",
                         action="store_true",
                         default=False,
@@ -143,9 +191,16 @@ if __name__ == '__main__':
                         action="store_true",
                         default=False,
                         help="Include raw incident log as markdown blockquote")
+    parser.add_argument('--days',
+                        type=int,
+                        default=7,
+                        help='time window days')
     args = parser.parse_args()
     print_all_incidents(
+        silent=args.silent,
         group_by_description=args.group_by_description,
+        group_by_service=args.group_by_service,
         include_stats=args.include_stats,
-        include_incidents_as_blockquote=args.include_incidents_as_blockquote
+        include_incidents_as_blockquote=args.include_incidents_as_blockquote,
+        time_window_days=args.days
     )
