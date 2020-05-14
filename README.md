@@ -41,11 +41,8 @@ cp settings_example.py settings.py
 
 # Update settings.py for your PagerDuty escalation policy.
 #
-# from datetime import timedelta
-#
 # PAGERDUTY_API_TOKEN = 'yourapitoken'
 # ESCALATION_POLICIES = ['PYODVQB']  # Get from https://yoursubdomain.pagerduty.com/escalation_policies#PYODVQB
-# TIME_WINDOW = timedelta(weeks=1)
 ```
 
 Set up your environment.

@@ -10,7 +10,11 @@ import dateutil.parser
 
 import pygerduty.v2
 
-import settings
+try:
+    import settings
+except ImportError:
+    print("*** Error: Follow setup instructions in README.md to create settings.py")
+    raise SystemExit(1)
 
 
 logger = logging.getLogger(__name__)
