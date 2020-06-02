@@ -1,2 +1,2 @@
-pygerduty==0.38.2
+pygerduty==0.38.3
 python-dateutil==2.4.2
