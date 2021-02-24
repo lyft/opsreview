@@ -24,7 +24,7 @@ LOCAL_TZ = tz.tzlocal()
 
 
 class FormattedIncident(object):
-    def pretty_output(self):
+    def _pretty_output(self):
         return u'Time: {}\nService: {}\nDescription: {}\nURL: {}\nNotes:\n{}\n'.format(
             self.created_on.strftime('%A, %B %-d - %-I:%M %p'),
             self.service,
@@ -33,6 +33,20 @@ class FormattedIncident(object):
             self.notes,
         )
 
+    def _csv_output(self):
+        return u'{},{},{},{},"{}"'.format(
+            self.created_on.strftime('%A, %B %-d - %-I:%M %p'),
+            self.service,
+            self.description,
+            self.url,
+            self.notes,
+        )
+
+    def output(self, print_csv):
+        if print_csv:
+            return self._csv_output()
+        else:
+            return self._pretty_output()
 
 def recent_incidents_for_services(services, time_window):
     service_ids = [service.id for service in services]
@@ -48,6 +62,7 @@ def print_all_incidents(
     time_window_days,
     group_by_description=False,
     group_by_service=False,
+    print_csv=False,
     include_stats=False,
     include_incidents_as_blockquote=False,
 ):
@@ -74,13 +89,14 @@ def print_all_incidents(
         sorted_group_to_incident_list = sorted_description_to_incident_list
     if group_by_service or group_by_description:
         for group, incident_list in sorted_group_to_incident_list.iteritems():
-            print("########### {}: {} ##########\n".format(len(incident_list), group))
+            if not print_csv:
+                print("########### {}: {} ##########\n".format(len(incident_list), group))
             if not silent:
                 for incident in incident_list:
-                    print(incident.pretty_output())
+                    print(incident.output(print_csv))
     else:
         for incident in all_incidents:
-            print(incident.pretty_output())
+            print(incident.output(print_csv))
 
     print('Total Pages: {}'.format(len(all_incidents)))
     if include_incidents_as_blockquote:
@@ -187,6 +203,10 @@ if __name__ == '__main__':
                         action="store_true",
                         default=False,
                         help="Group PD incidents by service")
+    parser.add_argument("--print-csv",
+                        action="store_true",
+                        default=False,
+                        help="Print in CSV format")
     parser.add_argument("--include-stats",
                         action="store_true",
                         default=False,
@@ -204,6 +224,7 @@ if __name__ == '__main__':
         silent=args.silent,
         group_by_description=args.group_by_description,
         group_by_service=args.group_by_service,
+        print_csv=args.print_csv,
         include_stats=args.include_stats,
         include_incidents_as_blockquote=args.include_incidents_as_blockquote,
         time_window_days=args.days
