@@ -3,12 +3,13 @@ from __future__ import division, print_function, unicode_literals
 
 import argparse
 import logging
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict, defaultdict, namedtuple
 from datetime import datetime, timedelta
 from dateutil import tz
 import dateutil.parser
 
 import pygerduty.v2
+from prettytable import PrettyTable
 
 try:
     import settings
@@ -21,6 +22,14 @@ logger = logging.getLogger(__name__)
 
 pagerduty_service = pygerduty.v2.PagerDuty(settings.PAGERDUTY_API_TOKEN)
 LOCAL_TZ = tz.tzlocal()
+Tag = namedtuple("Tag", ["tag", "display_name"])
+TAGS = [
+    Tag(tag="#a", display_name="Actionable (#a)"),
+    Tag(tag="#na", display_name="Non Actionable (#na)"),
+    Tag(tag="#t", display_name="Transient (#t)"),
+    Tag(tag="#s", display_name="Seasonal (#s)"),
+    Tag(tag="#abot", display_name="Actionable By Other Team (#abot)"),
+]
 
 
 class FormattedIncident(object):
@@ -113,27 +122,40 @@ def get_formatted_incidents(recent_incidents):
     return formatted_incidents
 
 
+def _tag_incident(incident, tag_stats):
+    tagged = False
+    for idx, tag in enumerate(TAGS):
+        found_tag = any(tag.tag in note for note in incident.notes)
+        if not found_tag:
+            continue
+        tagged = True
+        tag_stats[idx] += 1
+    return tagged
+
+
 def print_stats(all_incidents, include_stats):
     if not include_stats:
         return
-    actionable = 0
-    non_actionable = 0
+
+    stats_table = PrettyTable()
+    stats_table.field_names = ["Incidents", "Number"]
+    stats_table.align["Incidents"] = "l"
+    stats_table.align["Number"] = "r"
+
+    # tag_stats is indexed the same way as TAGS so tag_stats[0] is #a, etc.
+    tag_stats = [0] * len(TAGS)
+
     not_tagged = 0
     for i in all_incidents:
-        if is_actionable(i):
-            actionable += 1
-        elif is_non_actionable(i):
-            non_actionable += 1
-        else:
-            not_tagged += 1
-    print("""# Statistics
-| Incidents            | Number |
-| -------------------- | ------ |
-| Total                | {:6} |
-| Actionable (#a)      | {:6} |
-| Non Actionable (#na) | {:6} |
-| Not Tagged           | {:6} |
-""".format(len(all_incidents), actionable, non_actionable, not_tagged))
+        tagged = _tag_incident(i, tag_stats)
+        not_tagged += 0 if tagged else 1
+
+    for idx, stat in enumerate(tag_stats):
+        stats_table.add_row([TAGS[idx].display_name, stat])
+    stats_table.add_row(["Not Tagged", not_tagged])
+    stats_table.add_row(["Total", len(all_incidents)])
+
+    print(stats_table)
 
 
 def sort_incidents(all_incidents, group_by_description, group_by_service):
@@ -162,14 +184,6 @@ def sort_incidents(all_incidents, group_by_description, group_by_service):
     else:
         all_incidents = sorted(all_incidents, key=lambda i: i.created_on)
     return all_incidents, sorted_description_to_incident_list, sorted_service_to_incident_list
-
-
-def is_actionable(incident):
-    return any('#a' in note for note in incident.notes)
-
-
-def is_non_actionable(incident):
-    return any('#na' in note for note in incident.notes)
 
 
 if __name__ == '__main__':
