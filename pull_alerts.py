@@ -3,7 +3,7 @@ from __future__ import division, print_function, unicode_literals
 
 import argparse
 import logging
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import Counter, OrderedDict, defaultdict, namedtuple
 from datetime import datetime, timedelta
 from dateutil import tz
 import dateutil.parser
@@ -124,12 +124,12 @@ def get_formatted_incidents(recent_incidents):
 
 def _tag_incident(incident, tag_stats):
     tagged = False
-    for idx, tag in enumerate(TAGS):
+    for tag in TAGS:
         found_tag = any(tag.tag in note for note in incident.notes)
         if not found_tag:
             continue
         tagged = True
-        tag_stats[idx] += 1
+        tag_stats[tag] += 1
     return tagged
 
 
@@ -142,16 +142,15 @@ def print_stats(all_incidents, include_stats):
     stats_table.align["Incidents"] = "l"
     stats_table.align["Number"] = "r"
 
-    # tag_stats is indexed the same way as TAGS so tag_stats[0] is #a, etc.
-    tag_stats = [0] * len(TAGS)
+    tag_stats = Counter()
 
     not_tagged = 0
     for i in all_incidents:
         tagged = _tag_incident(i, tag_stats)
         not_tagged += 0 if tagged else 1
 
-    for idx, stat in enumerate(tag_stats):
-        stats_table.add_row([TAGS[idx].display_name, stat])
+    for tag in TAGS:
+        stats_table.add_row([tag.display_name, tag_stats[tag]])
     stats_table.add_row(["Not Tagged", not_tagged])
     stats_table.add_row(["Total", len(all_incidents)])
 
