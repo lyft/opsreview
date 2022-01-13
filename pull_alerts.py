@@ -147,7 +147,7 @@ def print_stats(all_incidents, include_stats):
     not_tagged = 0
     for i in all_incidents:
         tagged = _tag_incident(i, tag_stats)
-        not_tagged += 0 if tagged else 1
+        not_tagged += not tagged
 
     for tag in TAGS:
         stats_table.add_row([tag.display_name, tag_stats[tag]])
