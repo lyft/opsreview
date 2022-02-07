@@ -71,6 +71,7 @@ def recent_incidents_for_services(services, time_window):
             return recent_incidents
         raise
 
+
 def print_all_incidents(
     silent,
     time_window_days,
