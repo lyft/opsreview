@@ -3,6 +3,7 @@ from __future__ import division, print_function, unicode_literals
 
 import argparse
 import logging
+import urllib
 from collections import Counter, OrderedDict, defaultdict, namedtuple
 from datetime import datetime, timedelta
 from dateutil import tz
@@ -45,12 +46,30 @@ class FormattedIncident(object):
 
 def recent_incidents_for_services(services, time_window):
     service_ids = [service.id for service in services]
-    recent_incidents = list(pagerduty_service.incidents.list(
-        service_ids=service_ids,
-        since=datetime.now() - time_window
-    ))
-    return recent_incidents
+    try:
+        recent_incidents = list(pagerduty_service.incidents.list(
+            service_ids=service_ids,
+            since=datetime.now() - time_window
+        ))
+        return recent_incidents
 
+    except urllib.error.HTTPError as e:
+        if e.reason == 'URI Too Long':
+            mid_point = int(len(service_ids)/2)
+            recent_incidents = list(pagerduty_service.incidents.list(
+                service_ids=service_ids[:mid_point],
+                since=datetime.now() - time_window,
+            ))
+            recent_incidents.extend(
+                list(
+                    pagerduty_service.incidents.list(
+                        service_ids=service_ids[mid_point:],
+                        since=datetime.now() - time_window,
+                    )
+                )
+            )
+            return recent_incidents
+        raise
 
 def print_all_incidents(
     silent,
