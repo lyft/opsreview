@@ -56,17 +56,12 @@ def recent_incidents_for_services(services, time_window):
     except urllib.error.HTTPError as e:
         if e.reason == 'URI Too Long':
             mid_point = int(len(service_ids)/2)
-            recent_incidents = list(pagerduty_service.incidents.list(
-                service_ids=service_ids[:mid_point],
-                since=datetime.now() - time_window,
-            ))
-            recent_incidents.extend(
-                list(
-                    pagerduty_service.incidents.list(
-                        service_ids=service_ids[mid_point:],
-                        since=datetime.now() - time_window,
-                    )
-                )
+            return recent_incidents_for_services(
+               service_ids=service_ids[:mid_point],
+               time_window=time_window
+            ) + recent_incidents_for_services(
+               service_ids=service_ids[mid_point:],
+               time_window=time_window
             )
             return recent_incidents
         raise
