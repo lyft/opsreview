@@ -63,7 +63,6 @@ def recent_incidents_for_services(services, time_window):
                service_ids=service_ids[mid_point:],
                time_window=time_window
             )
-            return recent_incidents
         raise
 
 
