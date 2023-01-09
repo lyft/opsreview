@@ -96,7 +96,7 @@ def print_all_incidents(
     elif group_by_description:
         sorted_group_to_incident_list = sorted_description_to_incident_list
     if group_by_service or group_by_description:
-        for group, incident_list in sorted_group_to_incident_list.iteritems():
+        for group, incident_list in sorted_group_to_incident_list.items():
             print("########### {}: {} ##########\n".format(len(incident_list), group))
             if not silent:
                 for incident in incident_list:
@@ -192,7 +192,7 @@ def sort_incidents(all_incidents, group_by_description, group_by_service):
 
     if group_by_description:
         all_incidents = []
-        for incident_list in sorted_description_to_incident_list.itervalues():
+        for incident_list in sorted_description_to_incident_list.values():
             all_incidents += incident_list
     else:
         all_incidents = sorted(all_incidents, key=lambda i: i.created_on)
