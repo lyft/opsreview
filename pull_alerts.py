@@ -6,6 +6,8 @@ import logging
 import urllib
 from collections import Counter, OrderedDict, defaultdict, namedtuple
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
 from dateutil import tz
 import dateutil.parser
 
@@ -49,7 +51,7 @@ def recent_incidents_for_services(services, time_window):
     try:
         recent_incidents = list(pagerduty_service.incidents.list(
             service_ids=service_ids,
-            since=datetime.now() - time_window
+            since=datetime.now(tz=ZoneInfo("Europe/Minsk")) - time_window
         ))
         return recent_incidents
 
@@ -87,6 +89,7 @@ def print_all_incidents(
         group_by_service
     )
     print_stats(all_incidents, include_stats)
+    # all_incidents = [i for i in all_incidents if 5 <= i.created_on.hour <= 15]
     if include_incidents_as_blockquote:
         print("""# Raw incident log
 ```
