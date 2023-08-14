@@ -51,7 +51,7 @@ def recent_incidents_for_services(services, time_window):
     try:
         recent_incidents = list(pagerduty_service.incidents.list(
             service_ids=service_ids,
-            since=datetime.now(tz=ZoneInfo("Europe/Minsk")) - time_window
+            since=datetime.now(tz=ZoneInfo("America/Los_Angeles")) - time_window
         ))
         return recent_incidents
 
