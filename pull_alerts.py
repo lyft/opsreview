@@ -6,7 +6,6 @@ import logging
 import urllib
 from collections import Counter, OrderedDict, defaultdict, namedtuple
 from datetime import datetime, timedelta
-
 from dateutil import tz
 import dateutil.parser
 
