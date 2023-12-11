@@ -36,7 +36,7 @@ TAGS = [
 class FormattedIncident(object):
     def pretty_output(self):
         return u'Time: {}\nService: {}\nDescription: {}\nURL: {}\nNotes:\n{}\n'.format(
-            self.created_on.strftime('%A, %B %-d - %-I:%M %p'),
+            self.created_on.strftime('%A, %B %-d - %-I:%M %p %z'),
             self.service,
             self.description,
             self.url,
