@@ -12,21 +12,21 @@ Using the opsreview tool, you can quickly compile a report on recent alerts for 
 ```
 > python pull_alerts.py
 
-Time: Tuesday, January 19 - 9:19 AM
+Time: Tuesday, January 19 - 9:19 AM +0000
 Service: api
 Description: Failing API alarm: CRON failure
 URL: https://subdomain.pagerduty.com/incidents/ABC123
 Notes:
 ['bob@lyft.com: #a - Re-ran CRON']
 
-Time: Tuesday, January 19 - 12:03 PM
+Time: Tuesday, January 19 - 12:03 PM +0000
 Service: api
 Description: Failing API alarm: CPU percent > 10
 URL: https://subdomain.pagerduty.com/incidents/ABC124
 Notes:
 ['bob@lyft.com: #na - Temporary spike in CPU, no action taken. Alert is too sensitive.']
 
-Time: Tuesday, January 19 - 1:35 PM
+Time: Tuesday, January 19 - 1:35 PM +0000
 Service: www
 Description: Failing WWW alarm: 5XX percent > 5
 URL: https://subdomain.pagerduty.com/incidents/ABC125
@@ -56,4 +56,10 @@ pip install -r requirements.txt
 Run the script.
 ```bash
 python pull_alerts.py
+```
+
+## Timezone
+By default, local timezone is used to print alert time. To change default timezone use `TZ` environment variable:
+```bash
+TZ=UTC python pull_alerts.py
 ```
