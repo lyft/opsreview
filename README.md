@@ -47,15 +47,14 @@ cp settings_example.py settings.py
 
 Set up your environment.
 ```bash
-pip3 install virtualenv
-virtualenv venv3
+python3 -m venv env
 source venv3/bin/activate
 pip install -r requirements.txt
 ```
 
 Run the script.
 ```bash
-python pull_alerts.py
+python pull_alerts.py --include-low
 ```
 
 ## Timezone
