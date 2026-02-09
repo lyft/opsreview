@@ -1,5 +1,5 @@
 # Copy this file into pull_alerts.py in from https://github.com/lyft/opsreview
-# To include low_urgency execute like this: python pull_alerts.py --include-low
+# To include low_urgency call it like this: python pull_alerts.py --include-low
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
